@@ -415,6 +415,7 @@ public:
 	void decode(string inputString) {
 		int curr = 0;
 		root = decodeHelp(inputString, curr);
+		numNodes = countInorder();
 	}
 
 };
