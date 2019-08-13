@@ -20,7 +20,9 @@ private:
 	BSTNode<Key, E>* root;
 	int numNodes;
 
+	// Helper to delete tree
 	void clearHelp(BSTNode<Key,E>* curNode) {
+		// Hard to traverse postorder with threads. Do recursive instead.
 		if (curNode == nullptr) return;
 		if (curNode->leftIsChild) {
 			clearHelp(curNode->leftChild);
@@ -31,6 +33,8 @@ private:
 		delete curNode;
 	}
 
+	// Helper to remove node.
+	// Behavior depends on whether node to be removed has 0, 1, or 2 children.
 	void removeHelp(BSTNode<Key,E>* curNode, BSTNode<Key,E>* parent) {
 		if (curNode == nullptr) {
 			throw "Key not found.";
@@ -43,6 +47,7 @@ private:
 		}
 	}
 
+	// Search helper. Returns both node and parent of node.
 	pair<BSTNode<Key,E>*, BSTNode<Key,E>*> findHelp(Key key) {
 		BSTNode<Key,E>* parent = nullptr;
 		BSTNode<Key,E>* curNode = root;
@@ -88,8 +93,10 @@ private:
 		return root;
 	}
 
+	// If node has one child, move the child into its place and delete it
 	BSTNode<Key,E>* delOneChild(BSTNode<Key,E>* curNode, BSTNode<Key,E>* parent) {
 		BSTNode<Key,E>* child;
+		// Find child of node to be deleted
 		if (curNode->leftIsChild) {
 			child = curNode->leftChild;
 		} else {
@@ -115,6 +122,8 @@ private:
 		return root;
 	}
 
+	// If node has two children, the smallest child of the inorder successor takes the place of the current node, and the smallest child is then removed
+	// This ensures that the node is replaced by one less than itself and greater than or equal to the parent, preserving the BST structure
 	BSTNode<Key,E>* delTwoChildren(BSTNode<Key,E>* curNode, BSTNode<Key,E>* parent) {
 		BSTNode<Key,E>* successorParent = curNode;
 		BSTNode<Key,E>* successor = curNode->rightChild;
@@ -136,6 +145,7 @@ private:
 		return root;
 	}
 
+	// Find the inorder successor of a node
 	BSTNode<Key,E>* inOrderSuccessor(BSTNode<Key,E>* curNode) {
 
 		if (curNode->rightChild != nullptr && !curNode->rightChild->leftIsChild) {
@@ -148,6 +158,7 @@ private:
 		return curNode;
 	}
 
+	// Find the inorder predecessor of a node
 	BSTNode<Key,E>* inOrderPredecessor(BSTNode<Key,E>* curNode) {
 
 		if (curNode->leftChild != nullptr && !curNode->leftChild->rightIsChild) {
@@ -160,6 +171,7 @@ private:
 		return curNode;
 	}
 
+	// Find the leftmost descendant of a node (i.e. minimum - not necessarily at deepest level)
 	pair<BSTNode<Key,E>*, BSTNode<Key,E>*> leftmost(BSTNode<Key,E>* curNode) {
 		BSTNode<Key,E>* parent = nullptr;
 		// Stop if we hit the most leftmost or the leftmost of current subtree
@@ -172,32 +184,38 @@ private:
 	}
 
 public:
-	// Constructor. Creates a new tree.
+	// Null constructor.
 	BST() {
 		root = nullptr;
 		numNodes = 0;
 	}
 
+	// Constructor. Makes a root.
 	BST(const Key& k, const E& val) {
 		root = new BSTNode<Key,E>(k, val, nullptr, nullptr);
 		numNodes = 1;
 	}
 
+	// Constructor. Takes a root.
 	BST(BSTNode<Key,E>* newRoot) {
 		root = newRoot;
 		numNodes = countInorder();
 	}
 
+	// Destructor.
 	~BST() {
 		clearHelp(root);
 	}
 
+	// Insert into tree.
 	void insert(const Key& k, const E& val) {
 		BSTNode<Key,E>* parent = nullptr;
 		BSTNode<Key,E>* curNode = root;
+		// Stop if we hit the left or right edge of the tree
 		while (curNode != nullptr) {
 			parent = curNode;
 
+			// Place at left or right, as appropriate
 			if (k < curNode->key) {
 				if (curNode->leftIsChild) {
 					curNode = curNode->leftChild;
@@ -213,13 +231,16 @@ public:
 			}
 		}
 
+		// Create new node
 		BSTNode<Key,E>* temp = new BSTNode<Key,E>;
 		temp->key = k;
 		temp->value = val;
+		// If no tree exists, make root
 		if (parent == nullptr) {
 			root = temp;
 			root->leftChild = nullptr;
 			root->rightChild = nullptr;
+		// Otherwise, set node to left or right of parent as appropriate
 		} else if (k < parent->key) {
 			parent->setLeft(temp);
 		} else {
@@ -229,12 +250,14 @@ public:
 		numNodes++;
 	}
 
+	// Find node with given key
 	BSTNode<Key,E>* find(const Key& key) {
 		BSTNode<Key,E>* node;
 		std::tie(node, std::ignore) = findHelp(key);
 		return node;
 	}
 
+	// Remove node with given key
 	void remove(const Key& key) {
 		BSTNode<Key,E>* curNode;
 		BSTNode<Key,E>* parent;
@@ -242,7 +265,7 @@ public:
 		removeHelp(curNode,parent);
 	}
 
-	// Preorder-traverse tree from given root.
+	// Preorder-traverse tree
 	void traversePreorder(bool (*visit)(BSTNode<Key,E>*, int[2], double), int array[2], double num) {
 		// Start at root
 		BSTNode<Key,E>* curNode = root;
@@ -255,10 +278,10 @@ public:
 			// If current node has left child, go there (and traverse left subtree)
 			if (curNode->leftIsChild) {
 				curNode = curNode->leftChild;
-				// If current node doesn't have left child but does have right child, go there
+			// If current node doesn't have left child but does have right child, go there
 			} else if (curNode->rightIsChild) {
 				curNode = curNode->rightChild;
-				// If current node has neither child, move back up to nearest un-traversed right subtree
+			// If current node has neither child, move back up to nearest un-traversed right subtree
 			} else {
 				while (curNode != nullptr && !curNode->rightIsChild) {
 					curNode = curNode->rightChild;
@@ -270,6 +293,7 @@ public:
 		}
 	}
 
+	// Traverse tree inorder
 	BSTNode<Key,E>* traverseInorder(BSTNode<Key,E>* (*visit)(BSTNode<Key,E>*, int[2]), int array[2]) {
 		// Start at leftmost node
 		BSTNode<Key,E>* curNode;
@@ -294,6 +318,7 @@ public:
 
 	}
 
+	// Count nodes in tree
 	int countInorder() {
 		int count = 0;
 		// Start at leftmost node
@@ -318,7 +343,7 @@ public:
 
 	}
 
-	// Preorder-traverse and print tree from given root.
+	// Preorder-traverse and print tree
 	void printPreorder() {
 		// Start at root
 		BSTNode<Key,E>* curNode = root;
@@ -359,18 +384,23 @@ public:
 	// Could still do postorder traversal recursively, though.
 	//void traversePostorder() {}
 
+	// Return size of tree
 	int size() {
 		return numNodes;
 	}
 
+	// Encode tree to storage format
 	string encode() {
 		string outputString = "";
 		BSTNode<Key, E>* curNode = root;
 
+		// Look for right edge of tree
 		while (curNode != nullptr) {
 
+			// Add key and value to string
 			outputString += std::to_string(curNode->key) + curNode->value;
 
+			// Go to left child, or add null marker
 			if (curNode->leftIsChild) {
 				curNode = curNode->leftChild;
 				continue;
@@ -378,11 +408,13 @@ public:
 				outputString += "/";
 			}
 
+			// Go to right child
 			if (curNode->rightIsChild) {
 				curNode = curNode->rightChild;
 				continue;
 			}
 
+			// If node is leaf, add null marker and move up tree until we reach a right child
 			if (curNode->isLeaf()) {
 				while (curNode != nullptr && !curNode->rightIsChild) {
 					curNode = curNode->rightChild;
@@ -396,24 +428,36 @@ public:
 		return outputString;
 	}
 
+	// Helper to decode given string into BST
 	BSTNode<Key, E>* decodeHelp(string inputString, int& curr) {
+		// Check for null marker
 		if (inputString.at(curr) == '/') {
 			curr++;
 			return nullptr;
 		}
+
+		// Get key and value from string
 		Key k = inputString.at(curr++) - '0';
 		E val = inputString.at(curr++);
 
+		// Process rest of string and create node with correct children and values
 		BSTNode<Key,E>* tempRoot = new BSTNode<Key,E>(k, val, decodeHelp(inputString, curr), decodeHelp(inputString, curr));
+
 		// Predecessor pointers are set in setLeft or setRight, but successors don't yet exist, since construction proceeds postorder
 		// Therefore, set them (if necessary) once their successor exists
 		BSTNode<Key,E>* predecessor = inOrderPredecessor(tempRoot);
 		if (predecessor != nullptr && !predecessor->rightIsChild) predecessor->rightChild = tempRoot;
+
 		return tempRoot;
 	}
 
+	// Decode given string into BST
 	void decode(string inputString) {
+
+		// Start at first value
 		int curr = 0;
+
+		// Root of tree and numNodes will be set
 		root = decodeHelp(inputString, curr);
 		numNodes = countInorder();
 	}
